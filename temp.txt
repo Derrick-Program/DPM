@@ -1,5 +1,0 @@
-dpm [-V | -v ]<commands> <packagename>
-commands : [
-] 
-
-install,uninstall,update,search,list,upgrade,

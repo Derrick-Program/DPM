@@ -12,7 +12,6 @@ pub fn build_cli() -> Command {
         .author("Derrick Lin")
         .about("Derrick Package Manager (DPM)")
         .propagate_version(true)
-        .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommands([
             Command::new("install")

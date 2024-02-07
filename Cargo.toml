@@ -1,0 +1,25 @@
+[package]
+name = "DPM"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "dpm"
+path = "src/main.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anstyle = "1.0.6"
+clap = { version = "4.4.18", features = ["cargo", "color"] }
+clap_complete = "4.4.9"
+colored = "2.1.0"
+git2 = "0.18.1"
+indicatif = "0.17.7"
+reqwest = "0.11.23"
+serde = { version = "1.0.196", features = ["derive"] }
+serde_json = "1.0.112"
+serde_yaml = "0.9.30"
+sys-info = "0.9.1"
+tempfile = "3.10.0"
+tokio = { version = "1.35.1", features = ["full"] }

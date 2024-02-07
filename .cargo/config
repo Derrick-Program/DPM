@@ -1,5 +1,0 @@
-[env]
-install_dir = "/opt/DPM"
-bin_dir = "/usr/bin"
-config_dir = "/opt/DPM/Settings"
-bin_file = "dpm"

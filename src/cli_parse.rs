@@ -1,10 +1,10 @@
 #![allow(warnings)]
-use crate::{MyResult, BIN, VERSION};
+use crate::{Cli, CliCommands, CommandParseError, MyResult, Option_set, BIN, VERSION};
 use clap::{value_parser, Arg, ArgAction, ArgGroup, ColorChoice, Command, ValueHint};
 use clap_complete::{generate, Generator, Shell};
 use std::io;
 
-pub fn build_cli() -> Command {
+fn build_cli() -> Command {
     Command::new(BIN)
         .version(VERSION)
         .color(ColorChoice::Always)
@@ -129,12 +129,12 @@ pub fn build_cli() -> Command {
         )
 }
 
-pub fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
+fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
     generate(gen, cmd, cmd.get_name().to_string(), &mut io::stdout());
     std::process::exit(0);
 }
 
-pub fn get_styles() -> clap::builder::Styles {
+fn get_styles() -> clap::builder::Styles {
     clap::builder::Styles::styled()
         .usage(
             anstyle::Style::new()
@@ -170,4 +170,73 @@ pub fn get_styles() -> clap::builder::Styles {
         .placeholder(
             anstyle::Style::new().fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::White))),
         )
+}
+pub fn get_args() -> MyResult<Cli> {
+    let matches = build_cli().get_matches();
+    if let Some(generator) = matches.get_one::<Shell>("generator").copied() {
+        let mut cmd = build_cli();
+        eprintln!("Generating completion file for {generator}...");
+        print_completions(generator, &mut cmd);
+    }
+    let mut Commands: Option<CliCommands> = Option::<CliCommands>::None;
+    let mut Verbose = false;
+    let mut PN = vec![];
+    let mut Other = Option_set::default();
+
+    let config = match matches.subcommand() {
+        Some(("install", sub_command)) => {
+            Commands = Some(CliCommands::Install);
+            Verbose = sub_command.get_flag("verbose");
+            PN = sub_command
+                .get_many::<String>("PN")
+                .unwrap_or_default()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>();
+        }
+        Some(("update", sub_command)) => {
+            Commands = Some(CliCommands::Update);
+            Verbose = sub_command.get_flag("verbose");
+            PN = sub_command
+                .get_many::<String>("PN")
+                .unwrap_or_default()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>();
+        }
+        Some(("uninstall", sub_command)) => {
+            Commands = Some(CliCommands::Uninstall);
+            Verbose = sub_command.get_flag("verbose");
+            PN = sub_command
+                .get_many::<String>("PN")
+                .unwrap_or_default()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>();
+        }
+        Some(("search", sub_command)) => {
+            Commands = Some(CliCommands::Search);
+            Verbose = sub_command.get_flag("verbose");
+            PN = sub_command
+                .get_many::<String>("PN")
+                .unwrap_or_default()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>();
+        }
+        Some(("list", sub_command)) => {
+            Commands = Some(CliCommands::List);
+            Verbose = sub_command.get_flag("verbose");
+            Other.List_installed = Some(sub_command.get_flag("list-installed"));
+        }
+        Some(("upgrade", sub_command)) => {
+            Commands = Some(CliCommands::Upgrade);
+            Verbose = sub_command.get_flag("verbose");
+            Other.Upgrade_self = Some(sub_command.get_flag("upgrade-self"));
+        }
+        _ => return Err(Box::new(CommandParseError::new("Unrecognized command"))),
+    };
+    let PackageName = if PN.is_empty() { None } else { Some(PN) };
+    Ok(Cli {
+        Commands,
+        PackageName,
+        Verbose,
+        Other: Some(Other),
+    })
 }

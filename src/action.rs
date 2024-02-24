@@ -6,7 +6,7 @@ pub fn install(pkgs: &Vec<String>) {
 }
 
 pub fn update() {
-    todo!();
+    update_package_index();
 }
 
 pub fn uninstall(pkgs: &Vec<String>) {
@@ -20,8 +20,10 @@ pub fn search(pkgs: &Vec<String>) {
     }
 }
 pub fn list() {
-    todo!();
+    list_packages();
 }
-pub fn upgrade() {
-    todo!();
+pub fn upgrade(pkgs: &Vec<String>) {
+    for pkg in pkgs {
+        upgrade_package(&pkg);
+    }
 }

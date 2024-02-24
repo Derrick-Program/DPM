@@ -58,7 +58,7 @@ pub fn install_package(package_name: &str) {
 }
 pub fn update_package_index() {
     let manager = detect_package_manager();
-
+    let err = "Failed to update package index";
     let (command, args) = match manager {
         PackageManager::Apt => ("apt-get", vec!["update"]),
         PackageManager::Dnf | PackageManager::Yum => ("dnf", vec!["makecache"]),
@@ -67,6 +67,7 @@ pub fn update_package_index() {
         PackageManager::Brew => ("brew", vec!["update"]),
         PackageManager::Unknown => panic!("Unsupported package manager."),
     };
+    command_runner(command, args, err);
 }
 pub fn uninstall_package(package_name: &str) {
     let manager = detect_package_manager();
@@ -95,6 +96,40 @@ pub fn search_package(package_name: &str) {
         PackageManager::Brew => ("brew", vec!["search", package_name]),
         PackageManager::Unknown => panic!("Unsupported package manager."),
     };
+    command_runner(command, args, err);
+}
+pub fn upgrade_package(package_name: &str) {
+    let manager = detect_package_manager();
+    let err = format!("Failed to upgrade package: {}", package_name);
+    let err = err.as_str();
+    let (command, args) = match manager {
+        PackageManager::Apt => (
+            "apt-get",
+            vec!["install", "--only-upgrade", "-y", package_name],
+        ),
+        PackageManager::Dnf | PackageManager::Yum => ("dnf", vec!["upgrade", "-y", package_name]),
+        PackageManager::Pacman => ("pacman", vec!["-Syu", package_name]),
+        PackageManager::Zypper => ("zypper", vec!["update", "-y", package_name]),
+        PackageManager::Brew => ("brew", vec!["upgrade", package_name]),
+        PackageManager::Unknown => panic!("Unsupported package manager."),
+    };
+    command_runner(command, args, err);
+}
+
+pub fn list_packages() {
+    let manager = detect_package_manager();
+    let err = "Failed to list packages";
+
+    let (command, args) = match manager {
+        PackageManager::Apt => ("apt", vec!["list", "--installed"]),
+        PackageManager::Dnf => ("dnf", vec!["list", "installed"]),
+        PackageManager::Yum => ("yum", vec!["list", "installed"]),
+        PackageManager::Pacman => ("pacman", vec!["-Q"]),
+        PackageManager::Zypper => ("zypper", vec!["search", "--installed-only"]),
+        PackageManager::Brew => ("brew", vec!["list"]),
+        PackageManager::Unknown => panic!("Unsupported package manager."),
+    };
+
     command_runner(command, args, err);
 }
 

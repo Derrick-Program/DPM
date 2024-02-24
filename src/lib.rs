@@ -20,11 +20,11 @@ pub fn entry(config: Cli) -> MyResult<()> {
     println!("{:#?}", config);
     match config.Commands.unwrap() {
         CliCommands::Install => install(&config.PackageName.unwrap()),
-        CliCommands::List => todo!(),
+        CliCommands::List => list(),
         CliCommands::Search => search(&config.PackageName.unwrap()),
         CliCommands::Uninstall => uninstall(&config.PackageName.unwrap()),
-        CliCommands::Update => todo!(),
-        CliCommands::Upgrade => todo!(),
+        CliCommands::Update => update(),
+        CliCommands::Upgrade => upgrade(&config.PackageName.unwrap()),
         CliCommands::None => panic!("No command found"),
     }
     // if !utils::check_dir_exists(Path::new(INSTALL_DIR)) {

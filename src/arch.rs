@@ -7,6 +7,7 @@ pub enum CliCommands {
     Uninstall,
     Update,
     Upgrade,
+    UpgradeSelf,
     None,
 }
 #[derive(Debug)]
@@ -21,5 +22,4 @@ pub struct Cli {
 pub struct Option_set {
     pub List_installed: Option<bool>,
     pub List_sys_installed: Option<bool>,
-    pub Upgrade_self: Option<bool>,
 }

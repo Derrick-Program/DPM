@@ -119,10 +119,19 @@ fn build_cli() -> Command {
                         .action(ArgAction::SetTrue),
                 )
                 .arg(
-                    Arg::new("upgrade-self")
-                        .help("Self Upgrade")
-                        .short('S')
-                        .long("Self")
+                    Arg::new("PN")
+                        .value_name("Package name")
+                        .required(true)
+                        .action(ArgAction::Append),
+                ),
+            Command::new("upgradeSelf")
+                .about("Upgrade Self")
+                .visible_aliases(["US", "UPS", "grades"])
+                .arg(
+                    Arg::new("verbose")
+                        .help("Verbose")
+                        .short('v')
+                        .long("verbose")
                         .action(ArgAction::SetTrue),
                 ),
         ])
@@ -236,7 +245,15 @@ pub fn get_args() -> MyResult<Cli> {
         Some(("upgrade", sub_command)) => {
             Commands = Some(CliCommands::Upgrade);
             Verbose = sub_command.get_flag("verbose");
-            Other.Upgrade_self = Some(sub_command.get_flag("upgrade-self"));
+            PN = sub_command
+                .get_many::<String>("PN")
+                .unwrap_or_default()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>();
+        }
+        Some(("upgradeSelf", sub_command)) => {
+            Commands = Some(CliCommands::UpgradeSelf);
+            Verbose = sub_command.get_flag("verbose");
         }
         _ => return Err(Box::new(CommandParseError::new("Unrecognized command"))),
     };

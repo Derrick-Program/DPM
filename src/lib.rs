@@ -34,6 +34,7 @@ pub fn entry(config: Cli) -> MyResult<()> {
         CliCommands::Uninstall => uninstall(&config.PackageName.unwrap()),
         CliCommands::Update => update(),
         CliCommands::Upgrade => upgrade(&config.PackageName.unwrap()),
+        CliCommands::UpgradeSelf => upgrade_self(),
         CliCommands::None => panic!("No command found"),
     }
     // if !utils::check_dir_exists(Path::new(INSTALL_DIR)) {

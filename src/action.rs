@@ -33,3 +33,6 @@ pub fn upgrade(pkgs: &Vec<String>) {
         upgrade_package(&pkg);
     }
 }
+pub fn upgrade_self() {
+    println!("{} Upgrading self", "==>".blue());
+}

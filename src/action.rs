@@ -1,3 +1,5 @@
+use colored::Colorize;
+
 use crate::system::*;
 pub fn install(pkgs: &Vec<String>) {
     for pkg in pkgs {
@@ -19,8 +21,12 @@ pub fn search(pkgs: &Vec<String>) {
         search_package(&pkg);
     }
 }
-pub fn list() {
-    list_packages();
+pub fn list(sys: bool) {
+    if sys {
+        list_packages();
+    } else {
+        println!("\n{} List my Repo", "==>".blue());
+    }
 }
 pub fn upgrade(pkgs: &Vec<String>) {
     for pkg in pkgs {

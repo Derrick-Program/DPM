@@ -20,5 +20,6 @@ pub struct Cli {
 #[derive(Debug, Default)]
 pub struct Option_set {
     pub List_installed: Option<bool>,
+    pub List_sys_installed: Option<bool>,
     pub Upgrade_self: Option<bool>,
 }

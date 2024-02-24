@@ -20,7 +20,16 @@ pub fn entry(config: Cli) -> MyResult<()> {
     println!("{:#?}", config);
     match config.Commands.unwrap() {
         CliCommands::Install => install(&config.PackageName.unwrap()),
-        CliCommands::List => list(),
+        CliCommands::List => {
+            if let Some(options) = &config.Other {
+                if let Some(true) = options.List_sys_installed {
+                    list(true);
+                }
+                if let Some(true) = options.List_installed {
+                    list(false);
+                }
+            }
+        }
         CliCommands::Search => search(&config.PackageName.unwrap()),
         CliCommands::Uninstall => uninstall(&config.PackageName.unwrap()),
         CliCommands::Update => update(),

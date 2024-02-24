@@ -94,6 +94,13 @@ fn build_cli() -> Command {
                         .action(ArgAction::SetTrue),
                 )
                 .arg(
+                    Arg::new("list-sys-installed")
+                        .help("List System installed Package")
+                        .short('s')
+                        .long("list-sys")
+                        .action(ArgAction::SetTrue),
+                )
+                .arg(
                     Arg::new("list-installed")
                         .help("List installed Package")
                         .short('l')
@@ -224,6 +231,7 @@ pub fn get_args() -> MyResult<Cli> {
             Commands = Some(CliCommands::List);
             Verbose = sub_command.get_flag("verbose");
             Other.List_installed = Some(sub_command.get_flag("list-installed"));
+            Other.List_sys_installed = Some(sub_command.get_flag("list-sys-installed"));
         }
         Some(("upgrade", sub_command)) => {
             Commands = Some(CliCommands::Upgrade);

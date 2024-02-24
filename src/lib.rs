@@ -17,7 +17,7 @@ pub use utils::*;
 pub type MyResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 pub fn entry(config: Cli) -> MyResult<()> {
-    println!("{:#?}", config);
+    // println!("{:#?}", config);
     match config.Commands.unwrap() {
         CliCommands::Install => install(&config.PackageName.unwrap()),
         CliCommands::List => {

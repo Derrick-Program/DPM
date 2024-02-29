@@ -1,11 +1,11 @@
+use reqwest::Error;
+use serde::{Deserialize, Serialize};
+use serde_json::to_writer_pretty;
 use std::{
     fs::File,
     io::{self, Read},
     path::Path,
 };
-
-use serde::{Deserialize, Serialize};
-use serde_json::to_writer_pretty;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PackageInfo {
     pub package_name: String,
@@ -65,6 +65,11 @@ where
         to_writer_pretty(file, &data)?;
         Ok(())
     }
+    pub async fn from_url(url: &str) -> Result<T, Box<dyn std::error::Error>> {
+        let response = reqwest::get(url).await?.text().await?;
+        let repo_info: T = serde_json::from_str(&response)?;
+        Ok(repo_info)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -90,6 +95,20 @@ impl RepoInfo {
             description,
             hash,
             url,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Setting {
+    pub repo_url: String,
+    pub repo_info: String,
+}
+impl Setting {
+    pub fn new(repo_url: String, repo_info: String) -> Setting {
+        Setting {
+            repo_url,
+            repo_info,
         }
     }
 }

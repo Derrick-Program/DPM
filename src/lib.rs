@@ -22,13 +22,14 @@ pub type hashes = HashMap<String, String>;
 use tokio;
 #[tokio::main]
 pub async fn entry(config: Cli) -> MyResult<()> {
-    let setting_config: setting = init()?;
-    let mut repo_info = Repo::init(setting_config.get("repo_info").unwrap().clone()).await?;
+    let setting_config: setting = init().await?;
+    let db_info = Db::new(Path::new(MAIN_DIR))?;
     let pass_info = ActionInfo::new(
         config.PackageName.unwrap_or_default(),
         config.Verbose,
         setting_config,
-        repo_info,
+        // repo_info,
+        db_info,
     );
     match config.Commands.unwrap() {
         CliCommands::Install => pass_info.install().await?,
@@ -42,10 +43,9 @@ pub async fn entry(config: Cli) -> MyResult<()> {
                 }
             }
         }
-        
         CliCommands::Search => pass_info.search()?,
         CliCommands::Uninstall => pass_info.uninstall()?,
-        CliCommands::Update => pass_info.update(),
+        CliCommands::Update => pass_info.update().await?,
         CliCommands::Upgrade => pass_info.upgrade(),
         CliCommands::UpgradeSelf => pass_info.upgrade_self(),
         CliCommands::None => panic!("No command found"),

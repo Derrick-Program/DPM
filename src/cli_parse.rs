@@ -34,13 +34,13 @@ fn build_cli() -> Command {
             Command::new("update")
                 .about("Update Package")
                 .visible_aliases(["ud", "upda", "up"])
-                .arg_required_else_help(true)
-                .arg(
-                    Arg::new("PN")
-                        .value_name("Package name")
-                        .required(true)
-                        .action(ArgAction::Append),
-                )
+                // .arg_required_else_help(true)
+                // .arg(
+                //     Arg::new("PN")
+                //         .value_name("Package name")
+                //         .required(true)
+                //         .action(ArgAction::Append),
+                // )
                 .arg(
                     Arg::new("verbose")
                         .help("Verbose")
@@ -212,11 +212,11 @@ pub fn get_args() -> MyResult<Cli> {
         Some(("update", sub_command)) => {
             Commands = Some(CliCommands::Update);
             Verbose = sub_command.get_flag("verbose");
-            PN = sub_command
-                .get_many::<String>("PN")
-                .unwrap_or_default()
-                .map(|v| v.to_string())
-                .collect::<Vec<String>>();
+            // PN = sub_command
+            //     .get_many::<String>("PN")
+            //     .unwrap_or_default()
+            //     .map(|v| v.to_string())
+            //     .collect::<Vec<String>>();
         }
         Some(("uninstall", sub_command)) => {
             Commands = Some(CliCommands::Uninstall);

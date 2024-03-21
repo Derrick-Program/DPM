@@ -83,6 +83,7 @@ pub struct RepoInfo {
     pub description: String,
     pub hash: String,
     pub url: String,
+    pub entry: String,
 }
 
 impl RepoInfo {
@@ -92,6 +93,7 @@ impl RepoInfo {
         description: String,
         hash: String,
         url: String,
+        entry: String,
     ) -> RepoInfo {
         RepoInfo {
             file_name,
@@ -99,6 +101,7 @@ impl RepoInfo {
             description,
             hash,
             url,
+            entry,
         }
     }
 }

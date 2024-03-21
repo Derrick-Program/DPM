@@ -1,4 +1,6 @@
-use crate::{setting, JsonStorage, MyError, MyResult, BIN_DIR, CONFIG, INSTALL_DIR, MAIN_DIR};
+use crate::{
+    setting, ActionInfo, Db, JsonStorage, MyError, MyResult, BIN_DIR, CONFIG, INSTALL_DIR, MAIN_DIR,
+};
 use libc::{getpwuid, getuid, passwd};
 use std::{
     collections::HashMap,
@@ -32,7 +34,7 @@ fn get_current_username() -> Option<String> {
         }
     }
 }
-pub fn permision_check() {
+pub fn permision_check() -> MyResult<()> {
     let username = match get_current_username() {
         Some(username) => username,
         None => panic!("Could not get current username"),
@@ -42,17 +44,18 @@ pub fn permision_check() {
             "chown",
             vec!["-R", "root:root", MAIN_DIR],
             "Can't run chown",
-        );
+        )?;
     } else if cfg!(target_os = "macos") {
         system_command_runner(
             "chown",
             vec!["-R", format!("{}:admin", username).as_str(), MAIN_DIR],
             "Can't run chown",
-        );
+        )?;
     }
+    Ok(())
 }
 
-pub fn init() -> MyResult<HashMap<String, String>> {
+pub async fn init() -> MyResult<HashMap<String, String>> {
     system_command_runner(
         "mkdir",
         vec!["-p", INSTALL_DIR],
@@ -60,8 +63,11 @@ pub fn init() -> MyResult<HashMap<String, String>> {
     )?;
     system_command_runner("mkdir", vec!["-p", CONFIG], "Can't /opt/DPM/Setting dir")?;
     system_command_runner("mkdir", vec!["-p", BIN_DIR], "Can't /opt/DPM/bin dir")?;
-    permision_check();
+    permision_check()?;
     let config_path = Path::new(CONFIG).join("config.json");
+    let main_path = Path::new(MAIN_DIR);
+    let db = Db::new(main_path)?;
+    db.create_table()?;
     if !config_path.exists() {
         let mut file = File::create(&config_path)?;
         file.write_all(b"{}")?;
@@ -77,6 +83,7 @@ pub fn init() -> MyResult<HashMap<String, String>> {
                 .to_string(),
         );
         JsonStorage::to_json(&config, &config_path);
+        ActionInfo::init_update(config.get("repo_info").unwrap()).await?;
     }
     let config: setting = JsonStorage::from_json(&config_path)?;
     Ok(config)
@@ -98,7 +105,7 @@ fn detect_package_manager() -> PackageManager {
     }
     PackageManager::Unknown
 }
-pub fn install_package(package_name: &str, verbose: bool) {
+pub fn install_package(package_name: &str, verbose: bool) -> MyResult<()> {
     let manager = detect_package_manager();
     let err = format!("Failed to install package: {}", package_name);
     let err = err.as_str();
@@ -111,7 +118,8 @@ pub fn install_package(package_name: &str, verbose: bool) {
         PackageManager::Brew => ("brew", vec!["install", package_name]),
         PackageManager::Unknown => panic!("Unsupported package manager."),
     };
-    command_runner(command, args, err, verbose);
+    command_runner(command, args, err, verbose)?;
+    Ok(())
 }
 pub fn update_package_index(verbose: bool) {
     let manager = detect_package_manager();
@@ -216,7 +224,7 @@ fn command_runner(
 
     let status = cmd.status()?;
     if !status.success() {
-        panic!("{}", err_message);
+        return Err(Box::new(MyError::new(err_message)));
     }
 
     Ok(())

@@ -15,14 +15,14 @@ impl Repo {
     fn new() -> Repo {
         Repo { info: None }
     }
-    pub async fn init(url: String) -> MyResult<Repo> {
+    pub async fn init(url: &String) -> MyResult<Repo> {
         let mut repo = Repo::new();
         let info = Self::get_Repo_Info(url).await?;
         repo.info = Some(info);
         Ok(repo)
     }
-    async fn get_Repo_Info(url: String) -> MyResult<Repos> {
-        let url = url.as_str();
+    async fn get_Repo_Info(url: &String) -> MyResult<Repos> {
+        // let url = url.as_str();
         let data: Repos = JsonStorage::from_url(url).await?;
         Ok(data)
     }

@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::{self, remove_dir_all, remove_file, File, Permissions},
     io::Read,
     os::unix::fs::PermissionsExt,
@@ -11,22 +12,22 @@ use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
 
 use crate::{
-    hashes, read_file_from_zip, setting, system::*, unzip_file, JsonStorage, MyError, MyResult,
-    PackageInfo, Repo, BIN_DIR, INSTALL_DIR,
+    hashes, read_file_from_zip, setting, system::*, unzip_file, Db, DbPackage, JsonStorage,
+    MyError, MyResult, PackageInfo, Repo, Repos, BIN_DIR, INSTALL_DIR, MAIN_DIR,
 };
 #[derive(Debug)]
 pub struct ActionInfo {
     pub pkgs: Vec<String>,
     pub verbose: bool,
     pub setting_config: setting,
-    pub repo_info: Repo,
+    pub repo_info: Db,
 }
 impl ActionInfo {
     pub fn new(
         pkgs: Vec<String>,
         verbose: bool,
         setting_config: setting,
-        repo_info: Repo,
+        repo_info: Db,
     ) -> ActionInfo {
         ActionInfo {
             pkgs,
@@ -39,7 +40,7 @@ impl ActionInfo {
         let mut is: Vec<String> = Vec::new();
         let mut isnot: Vec<String> = Vec::new();
         for pkg in &self.pkgs {
-            if self.repo_info.get_all_keys().contains(pkg) {
+            if self.repo_info.read_all().unwrap().contains_key(pkg) {
                 is.push(pkg.clone());
             } else {
                 isnot.push(pkg.clone());
@@ -61,10 +62,10 @@ impl ActionInfo {
                 let ori_path = Path::new("/tmp").join(
                     &self
                         .repo_info
-                        .get_oneInfo_oneField(pkg.as_str(), "file_name")
+                        .read_one_field("filename", pkg.as_str())
                         .unwrap(),
                 );
-                let repo_package_info = self.repo_info.get_oneInfo(pkg.as_str()).unwrap();
+                let repo_package_info = self.repo_info.read_one(pkg.as_str()).unwrap();
                 let package_info_test: String =
                     read_file_from_zip(&ori_path, "packageInfo.json").unwrap();
                 let package_info: PackageInfo =
@@ -81,11 +82,10 @@ impl ActionInfo {
                         "Checking Package Hash ...(May take a while)".yellow()
                     );
                 }
-                if self.repo_info.get_oneInfo_oneField(&pkg, "hash").unwrap()
-                    != Self::hasher(&ori_path)?
+                if self.repo_info.read_one_field("hash", &pkg).unwrap() != Self::hasher(&ori_path)?
                 {
                     return Err(Box::new(MyError::new(
-                        format!("{}", "Hash Value Not Same dangerous".red()).as_str(),
+                        format!("{}", "Hash Value Not Same Very dangerous".red()).as_str(),
                     )));
                 }
                 if &package_info.hash != package_hash_info.get("hashes.json").unwrap() {
@@ -127,14 +127,53 @@ impl ActionInfo {
         }
         if !isnot.is_empty() {
             for pkg in isnot {
-                install_package(&pkg, self.verbose);
+                install_package(&pkg, self.verbose)?;
             }
         }
         Ok(())
     }
 
-    pub fn update(&self) {
-        update_package_index(self.verbose);
+    pub async fn update(&self) -> MyResult<()> {
+        println!("{} Updating...", "==>".blue());
+        let info = Repo::init(self.setting_config.get("repo_info").unwrap()).await?;
+        let info = info.get_allInfo();
+        let file = Path::new(MAIN_DIR).join("LocalRepo.db");
+        if file.exists() {
+            remove_file(file)?;
+        }
+        let db = Db::new(Path::new(MAIN_DIR))?;
+        db.create_table()?;
+        for (name, repo_info) in info {
+            db.insert(DbPackage::new(
+                &name,
+                repo_info.version.as_str(),
+                repo_info.url.as_str(),
+                repo_info.description.as_str(),
+                repo_info.file_name.as_str(),
+                repo_info.hash.as_str(),
+                repo_info.entry.as_str(),
+            ))?;
+        }
+        // update_package_index(self.verbose);
+        println!("{} Updated!", "==>".green());
+        Ok(())
+    }
+    pub async fn init_update(url_json: &String) -> MyResult<()> {
+        let info = Repo::init(url_json).await?;
+        let info = info.get_allInfo();
+        let db = Db::new(Path::new(MAIN_DIR))?;
+        for (name, repo_info) in info {
+            db.insert(DbPackage::new(
+                &name,
+                repo_info.version.as_str(),
+                repo_info.url.as_str(),
+                repo_info.description.as_str(),
+                repo_info.file_name.as_str(),
+                repo_info.hash.as_str(),
+                repo_info.entry.as_str(),
+            ))?;
+        }
+        Ok(())
     }
 
     pub fn uninstall(&self) -> MyResult<()> {
@@ -211,6 +250,7 @@ impl ActionInfo {
     pub fn upgrade_self(&self) {
         println!("{} Upgrading self", "==>".blue());
     }
+
     fn hasher(file_path: &Path) -> MyResult<String> {
         let mut hasher = Sha256::new();
         let mut file = File::open(&file_path)?;

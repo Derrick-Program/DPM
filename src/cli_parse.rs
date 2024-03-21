@@ -1,5 +1,5 @@
 #![allow(warnings)]
-use crate::{Cli, CliCommands, CommandParseError, MyResult, Option_set, BIN, VERSION};
+use crate::{Cli, CliCommands, MyError, MyResult, Option_set, BIN, VERSION};
 use clap::{value_parser, Arg, ArgAction, ArgGroup, ColorChoice, Command, ValueHint};
 use clap_complete::{generate, Generator, Shell};
 use std::io;
@@ -255,7 +255,7 @@ pub fn get_args() -> MyResult<Cli> {
             Commands = Some(CliCommands::UpgradeSelf);
             Verbose = sub_command.get_flag("verbose");
         }
-        _ => return Err(Box::new(CommandParseError::new("Unrecognized command"))),
+        _ => return Err(Box::new(MyError::new("Unrecognized command"))),
     };
     let PackageName = if PN.is_empty() { None } else { Some(PN) };
     Ok(Cli {

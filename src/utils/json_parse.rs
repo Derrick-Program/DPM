@@ -33,16 +33,16 @@ impl PackageInfo {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HashInfo {
-    pub file_name: String,
-    pub hash: String,
-}
-impl HashInfo {
-    pub fn new(file_name: String, hash: String) -> HashInfo {
-        HashInfo { file_name, hash }
-    }
-}
+// #[derive(Debug, Serialize, Deserialize)]
+// pub struct HashInfo {
+//     pub file_name: String,
+//     pub hash: String,
+// }
+// impl HashInfo {
+//     pub fn new(file_name: String, hash: String) -> HashInfo {
+//         HashInfo { file_name, hash }
+//     }
+// }
 
 pub struct JsonStorage<T> {
     _marker: std::marker::PhantomData<T>,
@@ -69,6 +69,10 @@ where
         let response = reqwest::get(url).await?.text().await?;
         let repo_info: T = serde_json::from_str(&response)?;
         Ok(repo_info)
+    }
+    pub fn from_str(file_contents: &str) -> io::Result<T> {
+        let data: T = serde_json::from_str(&file_contents)?;
+        Ok(data)
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{setting, JsonStorage, MyError, MyResult, CONFIG, INSTALL_DIR};
+use crate::{setting, JsonStorage, MyError, MyResult, BIN_DIR, CONFIG, INSTALL_DIR, MAIN_DIR};
 use libc::{getpwuid, getuid, passwd};
 use std::{
     collections::HashMap,
@@ -19,18 +19,6 @@ enum PackageManager {
     Brew,
     Unknown,
 }
-pub fn check_dir_exists(dir_name: &Path) -> bool {
-    dir_name.exists() && dir_name.is_dir()
-}
-pub fn list_dir(path: &Path) {
-    if let Ok(entries) = std::fs::read_dir(Path::new(path)) {
-        for entry in entries {
-            if let Ok(entry) = entry {
-                println!("{:?}", entry.path());
-            }
-        }
-    }
-}
 
 fn get_current_username() -> Option<String> {
     unsafe {
@@ -44,9 +32,7 @@ fn get_current_username() -> Option<String> {
         }
     }
 }
-
-pub fn init() -> MyResult<HashMap<String, String>> {
-    system_command_runner("mkdir", vec!["-p", CONFIG], "Can't Create dir");
+pub fn permision_check() {
     let username = match get_current_username() {
         Some(username) => username,
         None => panic!("Could not get current username"),
@@ -54,16 +40,27 @@ pub fn init() -> MyResult<HashMap<String, String>> {
     if cfg!(target_os = "linux") {
         system_command_runner(
             "chown",
-            vec!["-R", "root:root", INSTALL_DIR],
+            vec!["-R", "root:root", MAIN_DIR],
             "Can't run chown",
         );
     } else if cfg!(target_os = "macos") {
         system_command_runner(
             "chown",
-            vec!["-R", format!("{}:admin", username).as_str(), INSTALL_DIR],
+            vec!["-R", format!("{}:admin", username).as_str(), MAIN_DIR],
             "Can't run chown",
         );
     }
+}
+
+pub fn init() -> MyResult<HashMap<String, String>> {
+    system_command_runner(
+        "mkdir",
+        vec!["-p", INSTALL_DIR],
+        "Can't '/opt/DPM/Software' dir",
+    )?;
+    system_command_runner("mkdir", vec!["-p", CONFIG], "Can't /opt/DPM/Setting dir")?;
+    system_command_runner("mkdir", vec!["-p", BIN_DIR], "Can't /opt/DPM/bin dir")?;
+    permision_check();
     let config_path = Path::new(CONFIG).join("config.json");
     if !config_path.exists() {
         let mut file = File::create(&config_path)?;
@@ -225,7 +222,7 @@ fn command_runner(
     Ok(())
 }
 
-fn system_command_runner(command: &str, args: Vec<&str>, err_message: &str) -> MyResult<()> {
+pub fn system_command_runner(command: &str, args: Vec<&str>, err_message: &str) -> MyResult<()> {
     let mut cmd = Command::new(command);
     if !(cfg!(target_os = "linux") || cfg!(target_os = "macos")) {
         panic!("Unsupported OS");
@@ -237,7 +234,7 @@ fn system_command_runner(command: &str, args: Vec<&str>, err_message: &str) -> M
     cmd.args(&args);
     let status = cmd.status()?;
     if !status.success() {
-        panic!("{}", err_message);
+        return Err(Box::new(MyError::new(err_message)));
     }
     Ok(())
 }

@@ -4,12 +4,13 @@ use std::{collections::HashMap, path::Path};
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 pub type Repos = HashMap<String, RepoInfo>;
-use crate::{CommandParseError, JsonStorage, MyResult, RepoInfo};
+use crate::{JsonStorage, MyError, MyResult, RepoInfo};
 
 #[derive(Debug)]
 pub struct Repo {
     info: Option<Repos>,
 }
+#[allow(non_snake_case)]
 impl Repo {
     fn new() -> Repo {
         Repo { info: None }
@@ -89,7 +90,7 @@ impl Repo {
         let url = self.get_oneInfo_oneField(name, "url").unwrap();
         let req = reqwest::get(url).await?;
         if !req.status().is_success() {
-            return Err(Box::new(CommandParseError::new(
+            return Err(Box::new(MyError::new(
                 format!("Failed to download file: HTTP {}", req.status()).as_str(),
             )));
         }

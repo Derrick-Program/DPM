@@ -11,7 +11,7 @@ use crate::{MyError, MyResult};
 pub struct Db {
     conn: Connection,
 }
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct DbPackage {
     name: String,
     version: String,

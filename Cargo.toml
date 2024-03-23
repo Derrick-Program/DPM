@@ -28,3 +28,6 @@ sha2 = "0.10.8"
 tokio = { version = "1.35.1", features = ["full"] }
 walkdir = "2.4.0"
 zip = "0.6.6"
+
+[dev-dependencies]
+tempfile = "3.10.1"

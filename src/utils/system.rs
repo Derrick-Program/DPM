@@ -85,6 +85,7 @@ pub async fn init() -> MyResult<HashMap<String, String>> {
         JsonStorage::to_json(&config, &config_path);
         ActionInfo::init_update(config.get("repo_info").unwrap()).await?;
     }
+    permision_check()?;
     let config: setting = JsonStorage::from_json(&config_path)?;
     Ok(config)
 }
